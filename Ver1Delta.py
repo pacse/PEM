@@ -20,7 +20,6 @@ ASCII_RANGE = ASCII_MAX - ASCII_MIN + 1 # total unicode ascii characters
 
 # class for Ascii Enigma Cipher
 class Enigma:
-
   class Keyboard:
 
     def forward(self, letter: str) -> int: # pass from input
@@ -50,16 +49,149 @@ class Enigma:
 
   class Rotor:
 
-    def __init__(self, wiring: str, notch: int = 0) -> None:
+    def __init__(self, wiring: list[int] or str, notch: int = 0) -> None:
       # list for wiring
-      self.wiring: list[int] = [char_to_ascii(wiring[i]) for i in range(ASCII_RANGE)]
+      if type(wiring) == list[int]:
+        self.wiring: list[int] = wiring
 
+      elif type(wiring) == str:
+        self.wiring: list[int] = [char_to_ascii(wire) for wire in wiring]
+
+    def forward_and_backward(self, signal: int) -> int:
+      return self.wiring[signal]
+
+  class Reflector:
+    def __init__(self, wiring: list[int]) -> None:
+        # list for wiring
+      if type(wiring) == list[int]:
+        self.wiring: list[int] = wiring
+
+      elif type(wiring) == list[str]:
+        self.wiring: list[int] = [char_to_ascii(wire) for wire in wiring]
+
+    def reflect(self, signal: int) -> int:
+      return self.wiring[signal]
+
+  hist_rotors: dict[str, Rotor] = { # historical settings from wikipedia
+
+    # Commercial Enigma A, B
+    "IC": Rotor("DMTWSILRUYQNKFEJCAZBPGXOHV"),                   
+    "IIC": Rotor("HQZGPJTMOBLNCIFDYAWVEUSRKX"),
+    "IIIC": Rotor("UQNTLSZFMREHDPXKIBVYGJCWOA"),
+
+    # Swiss K                     
+    "I-K": Rotor("PEZUOHXSCVFMTBGLRINQJWAYDK"),
+    "II-K": Rotor("ZOUESYDKFWPCIQXHMVBLGNJRAT"),
+    "III-K": Rotor("EHRVXGAOBQUSIMZFLYNWKTPDJC"),
+    "UKW-K": Rotor("IMETCGFRAYSQBZXWLHKDVUPOJN"),
+    "ETW-K": Rotor("QWERTZUIOASDFGHJKPYXCVBNML"),
+
+    # Enigma I
+    "I": Rotor("EKMFLGDQVZNTOWYHXUSPAIBRCJ"),
+    "II": Rotor("AJDKSIRUXBLHWTMCQGZNPYFVOE"),
+    "III": Rotor("BDFHJLCPRTXVZNYEIWGAKMUSQO"),
+
+    # M3 Army
+    "IV": Rotor("ESOVPZJAYQUIRHXLNFTGKDCMWB"),
+    "V": Rotor("VZBRGITYUPSDNHLXAWMJQOFECK"),
+
+    # M3 & M4 Naval
+    "VI": Rotor("JPGVOUMFYQBENHZRDKASXLICTW"),
+    "VII": Rotor("NZJHGRCXMYSWBOUFAIVLPEKQDT"),
+    "VIII": Rotor("FKQHTLXOCBJSPDZRAMEWNIUYGV"),
+  }
+
+  hist_reflectors: dict[str, Reflector] = { # historical settings from wikipedia
+
+    # Model Name & Number unknown
+    "A": Reflector("EJMZALYXVBWFCRQUONTSPIKHGD"),
+    "B": Reflector("YRUHQSLDPXNGOKMIEBFZCWVJAT"),
+    "C": Reflector("FVPJIAOYEDRZXWGCTKUQSBNMHL"),
+
+    # M4 R2
+    "Beta": Reflector("LEYJVCNIXWPBQMDRTAKZGFUHOS"),
+    "Gamma": Reflector("FSOKANUERHMBTIYCWLQPZXVGJD"),
+
+    # M4 R1 (M3 + Thin)
+    "B Thin": Reflector("ENKQAUYWJICOPBLMDXZVFTHRGS"),
+    "C Thin": Reflector("RDOBJNTKVEHMLFCWZAXGYIPSUQ"),
+
+    # Enigma I
+    "ETW": Reflector("ABCDEFGHIJKLMNOPQRSTUVWXYZ"), 
+  }
+
+  def __init__(self,
+               use_hist_rotors: bool,
+               rotors: list[int] or list[list[int]] or list[list[str]],
+               use_hist_reflectors: bool,
+               reflector: list[int] or list[str] or int,
+               plugboard: list[str] or None) -> None:
+
+    # === initialize rotors ===
+    if isinstance(rotors, list):
+
+      # historical settings using key: value pairs
+      if use_hist_rotors and all(isinstance(rotor, int) for rotor in rotors):
+        self.rotors: list[Enigma.Rotor] = []
+        for rotor in rotors:
+          self.rotors.append(Enigma.hist_rotors[rotor])
+
+      # custom settings as a list list of ints for signals
+      elif all(
+          isinstance(rotor, list) 
+          and all(isinstance(wire, int) 
+          for wire in rotor)
+          for rotor in rotors
+      ):
+        self.rotors: list[list[int]] = []
+        for rotor in rotors:
+          self.rotors.append(Enigma.Rotor(rotor))
+
+      # Rotor also accepts a list of strs for signals
+      elif all(isinstance(rotor, str)
+      for rotor in rotors):
+        self.rotors: list[list[str]] = []
+        for rotor in rotors:
+          self.rotors.append(Enigma.Rotor(rotor))
+
+      else:
+        raise Exception(f"Invalid rotor assignent: {rotors}\nEXpected type list[list[int]] or list[str], got {type(rotors)}")
+
+    # invalid
+    else:
+      raise Exception(f"Invalid rotor assignment: {rotors}\nExpected type list[int] or list[list[int]] or list[str], got {type(rotors)}")
+
+    # === initialise reflectors ===
+    if isinstance(reflector, list):
+
+      # historical settings
+      if use_hist_reflectors and all(
+        isinstance(wire, str) for wire in reflector
+      ):
+        self.reflector = Enigma.hist_reflectors[reflector]
+
+      # custom settings
+      elif not use_hist_reflectors:
+        self.reflector = Enigma.Reflector(reflector)
+
+    else:
+      raise Exception(f"Invalid reflector assignment: {rotors}\nExpected type int or list[int] or list[str], got {type(rotors)}")
+
+    # === initialise plugboard ===
+    if isinstance(plugboard, list[str]) or isinstance(plugboard, None):
+      self.plugboard = Enigma.Plugboard(plugboard)
+
+    else:
+      raise Exception(f"Invalid plugboard assignment: {plugboard}\nExcepted type list[str] or None, got {type(plugboard)}")
 
 def char_to_ascii(char: str) -> int:
   '''
   converts a character to it's ASCII value
   '''
-  return ord(char) - ASCII_MIN
+  try:
+    return ord(char) - ASCII_MIN
+  except Exception as e:
+    print(f"Error: {e}")
 
 def ascii_to_char(char: int) -> str:
   '''
@@ -101,9 +233,9 @@ def srandrotorwiring() -> list[int]:
   wiring: list[int] = []
 
   while len(choices) > 0:
-    char = secrets.choice(choices)
-    wiring.append(char)
-    choices.pop(char)
+    index = secrets.randbelow(len(choices))
+    wiring.append(choices[index])
+    choices.pop(index)
 
   return wiring
 
@@ -221,4 +353,13 @@ def main() -> None:
   '''
 if __name__ == "__main__":
   #main()
-  r = Enigma.Rotor(srandstr(ASCII_RANGE, True))
+  rotors = ["I", "II", "III", "IV", "V"]
+  reflector = "A"
+  plugboard = ["AF", "CR", "EQ"]
+  machine = Enigma(True, rotors, True, reflector, plugboard)
+
+
+'''
+Citations:
+Enigma Historical Settings: https://en.m.wikipedia.org/wiki/Enigma_rotor_details
+'''
