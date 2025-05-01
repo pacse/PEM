@@ -18,6 +18,88 @@ ASCII_MIN = 32  # first unicode ascii character
 ASCII_MAX = 126 # last unicode ascii character
 ASCII_RANGE = ASCII_MAX - ASCII_MIN + 1 # total unicode ascii characters
 
+def check_type(variable, check_type: list[str]) -> bool:
+  '''
+  Checks if a variable is equal to a type with a list of types
+  eg. to check for list[list[int]] check_type = [list, list, int]
+  '''
+  # type 0 is correct, and isn't a list
+  if isinstance(variable, check_type[0]) and check_type[0] != "list":
+    return True
+
+  # type 0 is correct, and is a list
+  elif isinstance(variable, check_type[0]) and check_type[0] == "list":
+
+    # type 1 is correct, and isn't a list
+    if all(isinstance(var, check_type[1]) for var in variable) and check_type[1] != "list":
+      return True
+
+    # type 1 is correct, and is a list
+    elif all(isinstance(var, check_type[1]) for var in variable) and check_type[1] == "list":
+      if all(all(isinstance(v, check_type[2]) for v in var) for var in variable) and check_type[3] != "list":
+        return True
+
+      else:
+        raise Exception(f"type too complex")
+
+  # We didn't find the type
+  return False
+
+def char_to_ascii(char: str) -> int:
+  '''
+  converts a character to it's ASCII value
+  '''
+  try:
+    return ord(char) - ASCII_MIN
+  except Exception as e:
+    print(f"Error: {e}")
+
+def ascii_to_char(char: int) -> str:
+  '''
+  converts an ASCII value to it's character
+  '''
+  return chr(char + ASCII_MIN)
+
+def srandascii(mas_de_0 = True) -> int:
+  '''
+  Securely generates a random ascii character
+  if mas_de_0, the number must be greater than 0
+  '''
+  if not mas_de_0:
+    return chr(secrets.randbelow(ASCII_RANGE) + ASCII_MIN)
+  else:
+    char = 32
+    while char == 32:
+      char = secrets.randbelow(ASCII_RANGE) + ASCII_MIN
+    return chr(char)
+
+def srandstr(length: int, allow_whitespace = False) -> str:
+  '''
+  Securely generates a random string of length {length}
+  If allow_whitespace, the strings can contain ' '
+  '''
+  string = ""
+  for _ in range(length):
+    char = srandascii(False) if allow_whitespace else srandascii()
+    string += char
+
+  return string
+
+def srandrotorwiring() -> list[int]:
+  '''
+  Securely generate random rotor wiring
+  returning a shuffled ascii list
+  '''
+  choices = [i for i in range(ASCII_RANGE)]
+  wiring: list[int] = []
+
+  while len(choices) > 0:
+    index = secrets.randbelow(len(choices))
+    wiring.append(choices[index])
+    choices.pop(index)
+
+  return wiring
+
 # class for Ascii Enigma Cipher
 class Enigma:
   class Keyboard:
@@ -75,11 +157,11 @@ class Enigma:
   hist_rotors: dict[str, Rotor] = { # historical settings from wikipedia
 
     # Commercial Enigma A, B
-    "IC": Rotor("DMTWSILRUYQNKFEJCAZBPGXOHV"),                   
+    "IC": Rotor("DMTWSILRUYQNKFEJCAZBPGXOHV"),
     "IIC": Rotor("HQZGPJTMOBLNCIFDYAWVEUSRKX"),
     "IIIC": Rotor("UQNTLSZFMREHDPXKIBVYGJCWOA"),
 
-    # Swiss K                     
+    # Swiss K
     "I-K": Rotor("PEZUOHXSCVFMTBGLRINQJWAYDK"),
     "II-K": Rotor("ZOUESYDKFWPCIQXHMVBLGNJRAT"),
     "III-K": Rotor("EHRVXGAOBQUSIMZFLYNWKTPDJC"),
@@ -117,7 +199,7 @@ class Enigma:
     "C Thin": Reflector("RDOBJNTKVEHMLFCWZAXGYIPSUQ"),
 
     # Enigma I
-    "ETW": Reflector("ABCDEFGHIJKLMNOPQRSTUVWXYZ"), 
+    "ETW": Reflector("ABCDEFGHIJKLMNOPQRSTUVWXYZ"),
   }
 
   def __init__(self,
@@ -138,8 +220,8 @@ class Enigma:
 
       # custom settings as a list list of ints for signals
       elif all(
-          isinstance(rotor, list) 
-          and all(isinstance(wire, int) 
+          isinstance(rotor, list)
+          and all(isinstance(wire, int)
           for wire in rotor)
           for rotor in rotors
       ):
@@ -180,64 +262,9 @@ class Enigma:
     # === initialise plugboard ===
     if isinstance(plugboard, list[str]) or isinstance(plugboard, None):
       self.plugboard = Enigma.Plugboard(plugboard)
-
+        
     else:
       raise Exception(f"Invalid plugboard assignment: {plugboard}\nExcepted type list[str] or None, got {type(plugboard)}")
-
-def char_to_ascii(char: str) -> int:
-  '''
-  converts a character to it's ASCII value
-  '''
-  try:
-    return ord(char) - ASCII_MIN
-  except Exception as e:
-    print(f"Error: {e}")
-
-def ascii_to_char(char: int) -> str:
-  '''
-  converts an ASCII value to it's character
-  '''
-  return chr(char + ASCII_MIN)
-
-def srandascii(mas_de_0 = True) -> int:
-  '''
-  Securely generates a random ascii character
-  if mas_de_0, the number must be greater than 0
-  '''
-  if not mas_de_0:
-    return chr(secrets.randbelow(ASCII_RANGE) + ASCII_MIN)
-  else:
-    char = 32
-    while char == 32:
-      char = secrets.randbelow(ASCII_RANGE) + ASCII_MIN
-    return chr(char)
-
-def srandstr(length: int, allow_whitespace = False) -> str:
-  '''
-  Securely generates a random string of length {length}
-  If allow_whitespace, the strings can contain ' '
-  '''
-  string = ""
-  for _ in range(length):
-    char = srandascii(False) if allow_whitespace else srandascii()
-    string += char
-
-  return string
-
-def srandrotorwiring() -> list[int]:
-  '''
-  Securely generate random rotor wiring
-  returning a shuffled ascii list
-  '''
-  choices = [i for i in range(ASCII_RANGE)]
-  wiring: list[int] = []
-
-  while len(choices) > 0:
-    index = secrets.randbelow(len(choices))
-    wiring.append(choices[index])
-    choices.pop(index)
-
-  return wiring
 
 def gen_random_strs(amount: int, length: int) -> list[str]:
   '''
@@ -357,7 +384,6 @@ if __name__ == "__main__":
   reflector = "A"
   plugboard = ["AF", "CR", "EQ"]
   machine = Enigma(True, rotors, True, reflector, plugboard)
-
 
 '''
 Citations:
