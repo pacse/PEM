@@ -105,7 +105,7 @@ class Enigma:
   class Keyboard:
 
     def forward(self, letter: str) -> int: # pass from input
-      return ord(letter) - ASCII_MIN # signal
+      return char_to_ascii(letter) # signal
 
     def backward(self, signal: int) -> str: # pass to output
       return chr(signal + ASCII_MIN) # letter
@@ -119,8 +119,8 @@ class Enigma:
       # swap wires
       for plug in plugs:
         # get indexes to swap
-        a = ord(plug[0]) - ASCII_MIN
-        b = ord(plug[1]) - ASCII_MIN
+        a = char_to_ascii(plug[0])
+        b = char_to_ascii(plug[1])
 
         # update wiring
         self.wiring[a], self.wiring[b] = self.wiring[b], self.wiring[a]
@@ -133,11 +133,14 @@ class Enigma:
 
     def __init__(self, wiring: list[int] or str, notch: int = 0) -> None:
       # list for wiring
-      if type(wiring) == list[int]:
+      if check_type(wiring, [list, int]):
         self.wiring: list[int] = wiring
 
-      elif type(wiring) == str:
+      elif check_type(wiring, [str]):
         self.wiring: list[int] = [char_to_ascii(wire) for wire in wiring]
+      
+      else:
+        raise Exception(f"Could not initialise wiring with {wiring}")
 
     def forward_and_backward(self, signal: int) -> int:
       return self.wiring[signal]
@@ -145,10 +148,10 @@ class Enigma:
   class Reflector:
     def __init__(self, wiring: list[int]) -> None:
         # list for wiring
-      if type(wiring) == list[int]:
+      if check_type(wiring, [list, int]):
         self.wiring: list[int] = wiring
 
-      elif type(wiring) == list[str]:
+      elif check_type(wiring, [str]):
         self.wiring: list[int] = [char_to_ascii(wire) for wire in wiring]
 
     def reflect(self, signal: int) -> int:
@@ -204,67 +207,74 @@ class Enigma:
 
   def __init__(self,
                use_hist_rotors: bool,
-               rotors: list[int] or list[list[int]] or list[list[str]],
+               rotors: list[str] or list[list[int]],
                use_hist_reflectors: bool,
-               reflector: list[int] or list[str] or int,
+               reflector: list[int] or str,
                plugboard: list[str] or None) -> None:
 
     # === initialize rotors ===
-    if isinstance(rotors, list):
 
-      # historical settings using key: value pairs
-      if use_hist_rotors and all(isinstance(rotor, int) for rotor in rotors):
-        self.rotors: list[Enigma.Rotor] = []
-        for rotor in rotors:
-          self.rotors.append(Enigma.hist_rotors[rotor])
+    # historical settings using key: value pairs
+    if use_hist_rotors and check_type(rotors, [list, str]):
+      self.rotors: list[Enigma.Rotor] = []
+      for rotor in rotors:
+        self.rotors.append(Enigma.hist_rotors[rotor])
 
-      # custom settings as a list list of ints for signals
-      elif all(
-          isinstance(rotor, list)
-          and all(isinstance(wire, int)
-          for wire in rotor)
-          for rotor in rotors
-      ):
-        self.rotors: list[list[int]] = []
-        for rotor in rotors:
-          self.rotors.append(Enigma.Rotor(rotor))
+    # custom settings as a list list of ints for signals
+    elif check_type(rotors, [list, list, int]):
+      self.rotors: list[Enigma.Rotor] = []
+      for rotor in rotors:
+        self.rotors.append(Enigma.Rotor(rotor))
 
-      # Rotor also accepts a list of strs for signals
-      elif all(isinstance(rotor, str)
-      for rotor in rotors):
-        self.rotors: list[list[str]] = []
-        for rotor in rotors:
-          self.rotors.append(Enigma.Rotor(rotor))
-
-      else:
-        raise Exception(f"Invalid rotor assignent: {rotors}\nEXpected type list[list[int]] or list[str], got {type(rotors)}")
+    # Rotor also accepts a list of strs for signals
+    elif check_type(rotors, [list, str]):
+      self.rotors: list[Enigma.Rotor] = []
+      for rotor in rotors:
+        self.rotors.append(Enigma.Rotor(rotor))
 
     # invalid
     else:
-      raise Exception(f"Invalid rotor assignment: {rotors}\nExpected type list[int] or list[list[int]] or list[str], got {type(rotors)}")
+      raise Exception(f"Invalid rotor assignment: {rotors}\nExpected type list[list[int]] or list[str], got {type(rotors)}")
 
-    # === initialise reflectors ===
-    if isinstance(reflector, list):
+    # === initialise reflector ===
+    
+    # historical settings
+    if use_hist_reflectors and check_type(reflector, [str]):
+      self.reflector: Enigma.Reflector = Enigma.hist_reflectors[reflector]
 
-      # historical settings
-      if use_hist_reflectors and all(
-        isinstance(wire, str) for wire in reflector
-      ):
-        self.reflector = Enigma.hist_reflectors[reflector]
-
-      # custom settings
-      elif not use_hist_reflectors:
-        self.reflector = Enigma.Reflector(reflector)
+    # custom settings
+    elif not use_hist_reflectors and (check_type(reflector, [str]) or check_type(reflector, [list, int])):
+      self.reflector: Enigma.Reflector = Enigma.Reflector(reflector)
 
     else:
-      raise Exception(f"Invalid reflector assignment: {rotors}\nExpected type int or list[int] or list[str], got {type(rotors)}")
+      raise Exception(f"Invalid reflector assignment: {rotors}\nExpected type str or list[int], got {type(rotors)}")
 
     # === initialise plugboard ===
-    if isinstance(plugboard, list[str]) or isinstance(plugboard, None):
-      self.plugboard = Enigma.Plugboard(plugboard)
+    if check_type(plugboard, [list, str]) or plugboard == None:
+      self.plugboard: Enigma.Plugboard = Enigma.Plugboard(plugboard)
         
     else:
       raise Exception(f"Invalid plugboard assignment: {plugboard}\nExcepted type list[str] or None, got {type(plugboard)}")
+
+    # === initialize keyboard ===
+    self.keyboard = Enigma.Keyboard()
+
+  def pass_message(self, message: str):
+    '''
+    passes a provided message through the enigma
+    '''
+    result: str = ""
+    
+    for char in plaintext:
+      signal = self.keyboard.forward(char)                 # keyboard first
+      signal = self.plugboard.forward_and_backward(signal) # then plugboard
+      for rotor in self.rotors:                           
+        signal = rotor.forward_and_backward(signal)        # then rotors
+      signal = self.reflector.reflect(signal)              # reflector
+      for rotor in self.rotors[::-1]:                           
+        signal = rotor.forward_and_backward(signal)        # rotors again (reverse order)
+      signal = self.plugboard.forward_and_backward(signal) # plugboard again
+      result += self.keyboard.backward(signal)             # finally append to result
 
 def gen_random_strs(amount: int, length: int) -> list[str]:
   '''
@@ -384,8 +394,13 @@ if __name__ == "__main__":
   reflector = "A"
   plugboard = ["AF", "CR", "EQ"]
   machine = Enigma(True, rotors, True, reflector, plugboard)
+  plaintext = "Hello. I like rice."
+  encrypted_text = machine.pass_message(plaintext)
+  decrypted_text = machine.pass_message(plaintext)
 
-'''
-Citations:
-Enigma Historical Settings: https://en.m.wikipedia.org/wiki/Enigma_rotor_details
-'''
+  print(f"Plain Text: {plaintext}")
+  print(f"Encrypted Text: {encrypted_text}")
+  print(f"Decrypted Text: {decrypted_text}")
+
+# Citations:
+# Enigma Historical Settings: https://en.m.wikipedia.org/wiki/Enigma_rotor_details
