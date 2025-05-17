@@ -35,3 +35,6 @@ class Plugboard:
 
     def backward(self, signal):
         return self.alphabet.index(signal)
+    
+if __name__ == "__main__":
+    pass

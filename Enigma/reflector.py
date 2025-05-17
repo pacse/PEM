@@ -7,4 +7,5 @@ class Reflector:
     def reflect(self, signal):
         return self.alphabet[signal]
 
-RF = Reflector("")
+if __name__ == "__main__":
+    RF = Reflector("") 

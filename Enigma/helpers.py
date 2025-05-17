@@ -6,3 +6,6 @@ def index_to_letter(index):
 
 def letter_to_index(letter):
     return ord(letter) - LTR_0
+
+if __name__ == "__main__":
+    pass

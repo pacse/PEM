@@ -9,3 +9,6 @@ class Reflector:
 
     def backward(self, signal):
         pass
+
+if __name__ == "__main__":
+    pass
