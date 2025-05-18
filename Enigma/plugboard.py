@@ -6,10 +6,10 @@
 import helpers
 
 class Plugboard:
-    def __init__(self, pairs = None, alphabet = helpers.ALPHABET):
+    def __init__(self, pairs: list[str] = [], alphabet: str = helpers.ALPHABET):
         self.alphabet = [helpers.letter_to_index(letter) for letter in alphabet]
 
-        swapped = [] # list of swapped letters
+        swapped: list[str] = [] # list of swapped letters
         for pair in pairs:     # for each pair
             if len(pair) != 2: # check valid length
                 raise ValueError(f"Error in Plugboard Initialization: Expected string of length 2, found length {len(pair)} ({pair!r})")
@@ -30,10 +30,10 @@ class Plugboard:
                 swapped.append(pair[0])
                 swapped.append(pair[1])
 
-    def forward(self, signal):
+    def forward(self, signal: int) -> int:
         return self.alphabet[signal]
 
-    def backward(self, signal):
+    def backward(self, signal: int) -> int:
         return self.alphabet.index(signal)
     
 if __name__ == "__main__":

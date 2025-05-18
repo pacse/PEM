@@ -1,10 +1,10 @@
 import helpers
 
 class Reflector:
-    def __init__(self, alphabet):
+    def __init__(self, alphabet: str):
         self.alphabet = [helpers.letter_to_index(letter) for letter in alphabet]
 
-    def reflect(self, signal):
+    def reflect(self, signal: int) -> int:
         return self.alphabet[signal]
 
 if __name__ == "__main__":
