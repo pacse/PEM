@@ -1,7 +1,7 @@
 # PEM Version Gamma – WORKS
 import secrets
 from dataclasses import dataclass
-from typing import Tuple, List, TypeAlias
+from typing import List, TypeAlias
 
 ModResults: TypeAlias = List[List[int]]
 
@@ -30,13 +30,13 @@ def ascii_to_char(char: int) -> str:
   '''
   return chr(char + ASCII_MIN)
 
-def srandascii(mas_de_0 = True) -> str:
+def srandascii(mas_de_0: bool = True) -> str:
   '''
   Securely generates a random ascii character
   if mas_de_0, the number must be greater than 0
   '''
   if not mas_de_0:
-    return secrets.randbelow(ASCII_RANGE) + ASCII_MIN
+    char = secrets.randbelow(ASCII_RANGE) + ASCII_MIN
   else:
     char = 32
     while char == 32:
@@ -44,7 +44,7 @@ def srandascii(mas_de_0 = True) -> str:
 
   return chr(char)
 
-def srandstr(length: int, allow_whitespace = False) -> str:
+def srandstr(length: int, allow_whitespace: bool = False) -> str:
   '''
   Securely generates a random string of length {length}
   If allow_whitespace, the strings can contain ' '
@@ -67,7 +67,7 @@ def gen_random_strs(amount: int, length: int) -> list[str]:
   return random_strs
 
 def populate_mod_list(length: int) -> ModResults:
-  return [[0, 0] for i in range(length)]
+  return [[0, 0] for _ in range(length)]
 
 def get_key_letters(keys: list[str], index: int) -> list[int]:
   '''
