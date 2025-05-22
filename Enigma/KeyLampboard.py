@@ -1,6 +1,6 @@
 '''
 === Keyboard and Lampboard classes for Enigma Machine ===
-                        [VERIFIED]
+                       [COMPLETED]                       
 '''
 
 import helpers as hp
@@ -9,10 +9,8 @@ class Keyboard:
     def __init__(self):
         '''
         initialize a keyboard
-        self.wiring = a map of which letters (A-Z) map to which
-        eg. self.wiring[0] ('A') = 0 ('A'), self.wiring[5] = 5 ('F')
         '''
-        self.wiring = hp.ALPHABET
+        self.wiring = hp.ALPHABET # [0] = 'A', [1] = 'B' ...
 
     def forward(self, letter: str) -> int:
         '''
@@ -24,10 +22,8 @@ class Lampboard:
     def __init__(self):
         '''
         initialize a lampboard
-        self.wiring = a map of which letters (A-Z) map to which
-        eg. self.wiring[0] ('A') = 0 ('A'), self.wiring[5] = 5 ('F')
         '''
-        self.wiring = hp.ALPHABET
+        self.wiring = hp.ALPHABET # [0] = 'A', [1] = 'B' ...
         
     def forward(self, signal: int) -> str:
         '''
@@ -35,7 +31,7 @@ class Lampboard:
         '''
         return self.wiring[signal]
 
-# test usage
+# test implementation
 if __name__ == "__main__":
     # init Keyboard and Lampboard
     KB = Keyboard()
